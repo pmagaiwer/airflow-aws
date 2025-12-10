@@ -1,0 +1,8 @@
+.terraform/
+.terraform.lock.hcl
+terraform.tfstate
+terraform.tfstate.*
+*.tfvars
+!example.tfvars
+.DS_Store
+kubeconfig.yaml

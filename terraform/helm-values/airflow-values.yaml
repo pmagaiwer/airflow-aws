@@ -1,0 +1,150 @@
+# Airflow Helm Chart Values
+# Bitnami/Apache Airflow Chart Configuration for Minimal Deployment on EKS Fargate
+
+# Global settings
+global:
+  storageClass: "gp2"
+
+# Airflow configuration
+config:
+  AIRFLOW__CORE__DAGS_FOLDER: /opt/airflow/dags
+  AIRFLOW__CORE__EXECUTOR: LocalExecutor
+  AIRFLOW__CORE__SQL_ALCHEMY_CONN: postgresql://airflow:airflow@postgresql:5432/airflow
+  AIRFLOW__CORE__LOAD_EXAMPLES: "false"
+  AIRFLOW__CORE__PLUGINS_FOLDER: /opt/airflow/plugins
+  AIRFLOW__LOGGING__BASE_LOG_FOLDER: /opt/airflow/logs
+  AIRFLOW__LOGGING__DAG_PROCESSOR_MANAGER_LOG_FOLDER: /opt/airflow/logs
+  AIRFLOW__DATABASE__LOAD_DEFAULT_CONNECTIONS: "true"
+
+# Webserver (UI) configuration
+webserver:
+  enabled: true
+  replicaCount: 1
+  
+  service:
+    type: LoadBalancer
+    port: 8080
+    annotations: {}
+
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 250m
+      memory: 256Mi
+
+  autoscaling:
+    enabled: false
+    minReplicas: 1
+    maxReplicas: 2
+    targetCPUUtilizationPercentage: 80
+
+# Scheduler configuration
+scheduler:
+  enabled: true
+  replicaCount: 1
+
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 250m
+      memory: 256Mi
+
+  autoscaling:
+    enabled: false
+
+# Workers (for CeleryExecutor, disabled for LocalExecutor)
+workers:
+  enabled: false
+  replicas: 0
+
+# PostgreSQL - in-cluster database (for PoC/dev only)
+postgresql:
+  enabled: true
+  auth:
+    database: airflow
+    username: airflow
+    password: airflow
+  
+  primary:
+    resources:
+      limits:
+        cpu: 500m
+        memory: 512Mi
+      requests:
+        cpu: 250m
+        memory: 256Mi
+  
+  metrics:
+    enabled: false
+
+# Redis (optional, needed for CeleryExecutor/Celery results backend)
+redis:
+  enabled: false
+
+# Airflow initialization
+airflow:
+  # Create default user
+  createUserJob:
+    enabled: true
+  
+  # Database migrations
+  migrateJobsDb:
+    enabled: true
+  
+  # Wait for database
+  waitForDb:
+    enabled: true
+
+# Persistence for logs and DAGs
+persistence:
+  enabled: true
+  size: 10Gi
+  storageClassName: gp2
+  logs:
+    enabled: true
+    size: 5Gi
+  dags:
+    enabled: true
+    size: 2Gi
+
+# Security contexts
+podSecurityContext:
+  runAsUser: 50000
+  runAsGroup: 50000
+  fsGroup: 50000
+
+securityContext:
+  runAsNonRoot: true
+  readOnlyRootFilesystem: true
+
+# Image configuration
+image:
+  registry: docker.io
+  repository: apache/airflow
+  tag: 2.7.3
+  pullPolicy: IfNotPresent
+
+# Node affinity (optional - for cost optimization on Fargate)
+affinity:
+  # Prefer to run on the same node to save costs
+  podAntiAffinity: soft
+
+# Tolerations for Fargate
+tolerations: []
+
+# Service Account
+serviceAccount:
+  create: true
+  name: "airflow"
+
+# Ingress (optional - if ALB ingress is preferred over LoadBalancer)
+ingress:
+  enabled: false
+  # ingressClassName: alb
+  # annotations:
+  #   alb.ingress.kubernetes.io/scheme: internet-facing
+  #   alb.ingress.kubernetes.io/target-type: ip
