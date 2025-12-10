@@ -1,0 +1,65 @@
+# Terraform state and lock files
+*.tfstate
+*.tfstate.*
+*.tflock.hcl
+.terraform/
+.terraform.lock.hcl
+
+# Terraform plan files
+tfplan
+*.plan
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.Python
+venv/
+env/
+ENV/
+
+# Chocolatey and package manager artifacts
+hoco/
+chocolatey/
+.choco/
+
+# Node/npm
+node_modules/
+package-lock.json
+
+# AWS and local credentials
+.aws/
+aws-credentials
+local.env
+*.pem
+*.key
+
+# Build artifacts
+dist/
+build/
+target/
+
+# Logs
+*.log
+logs/
+
+# Helm
+Chart.lock
+*.tgz
+
+# Local development
+.env.local
+.env.*.local
+*.local
