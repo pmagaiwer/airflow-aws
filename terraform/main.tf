@@ -158,15 +158,16 @@ resource "aws_iam_role_policy_attachment" "eks_fargate_pod_execution_role_policy
 
 ################################################################################
 # Kubernetes Namespace
+# TEMPORARILY DISABLED - Re-enable after EKS cluster upgrade
 ################################################################################
 
-resource "kubernetes_namespace" "airflow" {
-  metadata {
-    name = var.airflow_namespace
-  }
-
-  depends_on = [aws_eks_fargate_profile.airflow]
-}
+# resource "kubernetes_namespace" "airflow" {
+#   metadata {
+#     name = var.airflow_namespace
+#   }
+#
+#   depends_on = [aws_eks_fargate_profile.airflow]
+# }
 
 ################################################################################
 # Helm Release: Apache Airflow
@@ -237,49 +238,50 @@ resource "random_string" "airflow_secret" {
 
 ################################################################################
 # RBAC: Service Account for Airflow Workers (if needed)
+# TEMPORARILY DISABLED - Re-enable after EKS cluster upgrade
 ################################################################################
 
-resource "kubernetes_service_account" "airflow" {
-  metadata {
-    name      = "airflow-sa"
-    namespace = kubernetes_namespace.airflow.metadata[0].name
-  }
-
-  depends_on = [kubernetes_namespace.airflow]
-}
-
-resource "kubernetes_cluster_role" "airflow" {
-  metadata {
-    name = "airflow-role"
-  }
-
-  rule {
-    api_groups = [""]
-    resources  = ["pods", "pods/logs"]
-    verbs      = ["get", "list", "watch"]
-  }
-
-  rule {
-    api_groups = [""]
-    resources  = ["pods/exec"]
-    verbs      = ["create"]
-  }
-}
-
-resource "kubernetes_cluster_role_binding" "airflow" {
-  metadata {
-    name = "airflow-role-binding"
-  }
-
-  role_ref {
-    api_group = "rbac.authorization.k8s.io"
-    kind      = "ClusterRole"
-    name      = kubernetes_cluster_role.airflow.metadata[0].name
-  }
-
-  subject {
-    kind      = "ServiceAccount"
-    name      = kubernetes_service_account.airflow.metadata[0].name
-    namespace = kubernetes_namespace.airflow.metadata[0].name
-  }
-}
+# resource "kubernetes_service_account" "airflow" {
+#   metadata {
+#     name      = "airflow-sa"
+#     namespace = kubernetes_namespace.airflow.metadata[0].name
+#   }
+#
+#   depends_on = [kubernetes_namespace.airflow]
+# }
+#
+# resource "kubernetes_cluster_role" "airflow" {
+#   metadata {
+#     name = "airflow-role"
+#   }
+#
+#   rule {
+#     api_groups = [""]
+#     resources  = ["pods", "pods/logs"]
+#     verbs      = ["get", "list", "watch"]
+#   }
+#
+#   rule {
+#     api_groups = [""]
+#     resources  = ["pods/exec"]
+#     verbs      = ["create"]
+#   }
+# }
+#
+# resource "kubernetes_cluster_role_binding" "airflow" {
+#   metadata {
+#     name = "airflow-role-binding"
+#   }
+#
+#   role_ref {
+#     api_group = "rbac.authorization.k8s.io"
+#     kind      = "ClusterRole"
+#     name      = kubernetes_cluster_role.airflow.metadata[0].name
+#   }
+#
+#   subject {
+#     kind      = "ServiceAccount"
+#     name      = kubernetes_service_account.airflow.metadata[0].name
+#     namespace = kubernetes_namespace.airflow.metadata[0].name
+#   }
+# }
