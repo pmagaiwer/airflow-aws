@@ -34,7 +34,6 @@ provider "aws" {
       Environment = var.environment
       Project     = "airflow-eks"
       ManagedBy   = "Terraform"
-      CreatedAt   = timestamp()
     }
   }
 }

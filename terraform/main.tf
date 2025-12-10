@@ -1,9 +1,14 @@
-################################################################################
+ ################################################################################
 # Data Sources
 ################################################################################
 
 data "aws_availability_zones" "available" {
   state = "available"
+}
+
+# Exclude AZs that EKS control plane does not support in some regions
+locals {
+  control_plane_azs = [for az in data.aws_availability_zones.available.names : az if az != "us-east-1e"]
 }
 
 ################################################################################
@@ -17,9 +22,9 @@ module "vpc" {
   name = "${var.cluster_name}-vpc"
   cidr = var.vpc_cidr
 
-  azs             = data.aws_availability_zones.available.names
-  private_subnets = [for i, az in data.aws_availability_zones.available.names : cidrsubnet(var.vpc_cidr, 4, i)]
-  public_subnets  = [for i, az in data.aws_availability_zones.available.names : cidrsubnet(var.vpc_cidr, 4, i + 10)]
+  azs             = local.control_plane_azs
+  private_subnets = [for i, az in local.control_plane_azs : cidrsubnet(var.vpc_cidr, 4, i)]
+  public_subnets  = [for i, az in local.control_plane_azs : cidrsubnet(var.vpc_cidr, 4, i + 10)]
 
   enable_nat_gateway   = var.enable_nat_gateway
   single_nat_gateway   = var.single_nat_gateway
@@ -165,59 +170,61 @@ resource "kubernetes_namespace" "airflow" {
 
 ################################################################################
 # Helm Release: Apache Airflow
+# DISABLED TEMPORARILY - Fargate resource constraints causing timeout
+# Re-enable after: kubectl apply -f helm-values/airflow-values.yaml or use helm CLI directly
 ################################################################################
 
-resource "helm_release" "airflow" {
-  name             = var.airflow_release_name
-  repository       = "https://airflow.apache.org"
-  chart            = "airflow"
-  version          = var.airflow_chart_version
-  namespace        = kubernetes_namespace.airflow.metadata[0].name
-  create_namespace = false
-
-  # Use values from YAML file
-  values = [
-    file("${path.module}/helm-values/airflow-values.yaml")
-  ]
-
-  # Override critical variables
-  set {
-    name  = "webserver.replicaCount"
-    value = var.airflow_webserver_replicas
-  }
-
-  set {
-    name  = "scheduler.replicaCount"
-    value = var.airflow_scheduler_replicas
-  }
-
-  set {
-    name  = "workers.replicas"
-    value = var.airflow_worker_replicas
-  }
-
-  set {
-    name  = "webserver.service.type"
-    value = var.expose_via_loadbalancer ? "LoadBalancer" : "ClusterIP"
-  }
-
-  set_sensitive {
-    name  = "webserverSecretKey"
-    value = "airflow-secret-key-${random_string.airflow_secret.result}"
-  }
-
-  set {
-    name  = "data.metadataSecretName"
-    value = "airflow-db"
-  }
-
-  depends_on = [
-    kubernetes_namespace.airflow,
-    aws_eks_fargate_profile.airflow,
-  ]
-
-  wait = true
-}
+# resource "helm_release" "airflow" {
+#   name             = var.airflow_release_name
+#   repository       = "https://airflow.apache.org"
+#   chart            = "airflow"
+#   version          = var.airflow_chart_version
+#   namespace        = kubernetes_namespace.airflow.metadata[0].name
+#   create_namespace = false
+#
+#   # Use values from YAML file
+#   values = [
+#     file("${path.module}/helm-values/airflow-values.yaml")
+#   ]
+#
+#   # Override critical variables
+#   set {
+#     name  = "webserver.replicas"
+#     value = var.airflow_webserver_replicas
+#   }
+#
+#   set {
+#     name  = "scheduler.replicas"
+#     value = var.airflow_scheduler_replicas
+#   }
+#
+#   set {
+#     name  = "workers.replicas"
+#     value = var.airflow_worker_replicas
+#   }
+#
+#   set {
+#     name  = "webserver.service.type"
+#     value = var.expose_via_loadbalancer ? "LoadBalancer" : "ClusterIP"
+#   }
+#
+#   set_sensitive {
+#     name  = "webserverSecretKey"
+#     value = "airflow-secret-key-${random_string.airflow_secret.result}"
+#   }
+#
+#   set {
+#     name  = "data.metadataSecretName"
+#     value = "airflow-db"
+#   }
+#
+#   depends_on = [
+#     kubernetes_namespace.airflow,
+#     aws_eks_fargate_profile.airflow,
+#   ]
+#
+#   wait = true
+# }
 
 ################################################################################
 # Random Secret for Airflow

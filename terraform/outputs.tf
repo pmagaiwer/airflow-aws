@@ -43,10 +43,10 @@ output "airflow_namespace" {
   value       = kubernetes_namespace.airflow.metadata[0].name
 }
 
-output "airflow_release_name" {
-  description = "Helm release name for Airflow"
-  value       = helm_release.airflow.name
-}
+# output "airflow_release_name" {
+#   description = "Helm release name for Airflow (disabled - install manually)"
+#   value       = helm_release.airflow.name
+# }
 
 output "airflow_webserver_service_type" {
   description = "Airflow webserver service type"
