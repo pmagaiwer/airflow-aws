@@ -148,6 +148,25 @@ minikube start --driver=docker
 minikube start --apiserver-port=8444 --apiserver-name=minikube2
 ```
 
+**Hyper-V and VirtualBox conflict (Windows):**
+```bash
+# If you get: "VirtualBox won't boot a 64bits VM when Hyper-V is activated"
+# Option 1: Use VirtualBox with VT-x check disabled
+minikube delete --all
+minikube start --driver=virtualbox --no-vtx-check
+
+# Option 2: Use Hyper-V driver (requires Administrator privileges)
+minikube delete --all
+minikube start --driver=hyperv
+
+# Option 3: Disable Hyper-V temporarily (requires restart)
+bcdedit /set hypervisorlaunchtype off
+# Restart computer, then:
+minikube start --driver=virtualbox
+# Re-enable Hyper-V later if needed:
+bcdedit /set hypervisorlaunchtype auto
+```
+
 ### 📊 Managing Multiple Clusters
 
 ```bash
